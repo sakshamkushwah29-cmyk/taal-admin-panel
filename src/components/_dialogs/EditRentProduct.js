@@ -81,7 +81,7 @@ export default function EditRentProduct({ product, onSuccess }) {
       try {
         const { data, error } = await getAllCategories({
           method: "GET",
-          url: `/superadmin/get-categories`,
+          url: `/superadmin/get-categories?type=rental`,
           authRequired: true,
         });
         if (!error && data?.data) {

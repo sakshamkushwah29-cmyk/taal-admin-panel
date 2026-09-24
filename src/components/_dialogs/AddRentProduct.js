@@ -96,7 +96,7 @@ export default function AddRentProduct({ onSuccess }) {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const endpoint = `/superadmin/get-categories`;
+      const endpoint = `/superadmin/get-categories?type=rental`;
 
       try {
         const { data, error } = await getAllCategories({

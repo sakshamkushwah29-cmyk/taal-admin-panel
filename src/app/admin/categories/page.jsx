@@ -24,6 +24,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import PharmacyListSkeleton from "@/components/_skeletons/pharmacy-list-skeleton";
 import AddCategory from "@/components/_dialogs/AddCategory";
 import EditCategory from "@/components/_dialogs/EditCategory";
@@ -40,6 +48,7 @@ export default function CategoryPage() {
 
   const [searchValue, setSearchValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
 
   const {
     request: getAllCategories,
@@ -67,13 +76,17 @@ export default function CategoryPage() {
   };
 
   useEffect(() => {
-    const fetchGatekeeper = async () => {
+    const fetchCategories = async () => {
       const ITEMS_PER_PAGE = 10;
       const trimmedSearchQuery = searchQuery.trim();
 
-      const endpoint = trimmedSearchQuery
-        ? `/superadmin/search-gatekeeper?search=${trimmedSearchQuery}&limit=${ITEMS_PER_PAGE}`
-        : `/superadmin/get-categories?page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
+      let endpoint = `/superadmin/get-categories?page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
+      if (trimmedSearchQuery) {
+        endpoint += `&search=${encodeURIComponent(trimmedSearchQuery)}`;
+      }
+      if (selectedType && selectedType !== "all") {
+        endpoint += `&type=${selectedType}&exact=true`;
+      }
 
       try {
         const { data, error } = await getAllCategories({
@@ -82,24 +95,21 @@ export default function CategoryPage() {
           authRequired: true,
         });
 
-        console.log(data, "Data from managers");
         if (!error && data?.data) {
           setCategories(data?.data?.data || data?.data || []);
-          setTotalPages(data.data.totalPages || 1);
+          setTotalPages(data?.data?.totalPages || 1);
         }
       } catch (error) {
         console.error("Unexpected error:", error);
       }
     };
 
-    fetchGatekeeper();
-  }, [searchQuery, currentPage, refreshKey]);
+    fetchCategories();
+  }, [searchQuery, currentPage, refreshKey, selectedType]);
 
   const handleRefresh = () => {
     setRefreshKey((prevKey) => prevKey + 1);
   };
-
-
 
   return (
     <AdminDashboardLayout>
@@ -110,11 +120,29 @@ export default function CategoryPage() {
           <h2 className="text-xl font-bold">Categories</h2>
           <div className="flex flex-col md:flex-row gap-2 items-center">
             <Input
-              placeholder="Search by name "
+              placeholder="Search by name"
               value={searchValue}
               onChange={handleSearchChange}
-              className="w-[250px]"
+              className="w-[200px]"
             />
+
+            <Select
+              value={selectedType}
+              onValueChange={(val) => {
+                setSelectedType(val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="rental">Rental Only</SelectItem>
+                <SelectItem value="sale">Buyers Only</SelectItem>
+                <SelectItem value="both">Both (Rental & Buyers)</SelectItem>
+              </SelectContent>
+            </Select>
 
             <div className="flex gap-2">
               <Button
@@ -153,6 +181,7 @@ export default function CategoryPage() {
               <TableHeader className="font-bold">
                 <TableRow>
                   <TableCell>Name</TableCell>
+                  <TableCell>Type</TableCell>
                   <TableCell>Description</TableCell>
                   <TableCell>Icon</TableCell>
                   <TableCell className="text-center">Actions</TableCell>
@@ -161,7 +190,22 @@ export default function CategoryPage() {
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category?._id}>
-                    <TableCell>{category?.name || "N/A"}</TableCell>
+                    <TableCell className="font-medium">{category?.name || "N/A"}</TableCell>
+                    <TableCell>
+                      {category?.type === "rental" ? (
+                        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border-purple-200">
+                          Rental
+                        </Badge>
+                      ) : category?.type === "sale" ? (
+                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200">
+                          Buyers
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200">
+                          Both (Rental & Buyers)
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>{category?.description || "N/A"}</TableCell>
                     <TableCell>
                       {category?.icon ? (
@@ -201,7 +245,7 @@ export default function CategoryPage() {
               </TableBody>
             </Table>
 
-            {!searchQuery && (
+            {totalPages > 1 && (
               <div className="pt-4">
                 <Pagination>
                   <PaginationContent className="justify-center">

@@ -14,14 +14,22 @@ import { Label } from "@/components/ui/label";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FileText, Image as ImageIcon, Pencil } from "lucide-react";
+import { FileText, Image as ImageIcon, Pencil, Layers } from "lucide-react";
 import { showToast } from "@/components/_ui/toast-utils";
 import useAxios from "@/hooks/useAxios";
 import FileUploader from "../common/FileUploader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name is required"),
   description: z.string().min(5, "Description is required"),
+  type: z.enum(["rental", "sale", "both"]).default("both"),
   icon: z.string().optional(),
 });
 
@@ -39,6 +47,7 @@ export default function EditCategory({ category, onSuccess }) {
     defaultValues: {
       name: "",
       description: "",
+      type: "both",
       icon: "",
     },
   });
@@ -49,6 +58,7 @@ export default function EditCategory({ category, onSuccess }) {
       reset({
         name: category.name || "",
         description: category.description || "",
+        type: category.type || "both",
         icon: category.icon || "",
       });
     }
@@ -124,6 +134,37 @@ export default function EditCategory({ category, onSuccess }) {
                 "Enter description",
                 FileText
               )}
+
+              <div className="space-y-1">
+                <Label className="flex items-center gap-2 text-sm font-semibold">
+                  <Layers size={18} />
+                  Category Type (For)
+                </Label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Select category type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="both">Both (Rental & Buyers)</SelectItem>
+                        <SelectItem value="rental">Rental Only</SelectItem>
+                        <SelectItem value="sale">Buyers Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors?.type?.message && (
+                  <p className="text-red-500 text-xs">
+                    {errors.type.message}
+                  </p>
+                )}
+              </div>
 
               <div className="space-y-1">
                 <Label className="flex items-center gap-2 text-sm font-semibold">

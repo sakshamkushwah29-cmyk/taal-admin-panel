@@ -87,7 +87,7 @@ export default function AddSaleProduct({ onSuccess }) {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const endpoint = `/superadmin/get-categories`;
+      const endpoint = `/superadmin/get-categories?type=sale`;
 
       try {
         const { data, error } = await getAllCategories({
